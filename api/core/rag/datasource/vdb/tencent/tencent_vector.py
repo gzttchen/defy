@@ -2,10 +2,10 @@ import json
 from typing import Any, Optional
 
 from pydantic import BaseModel
-from tcvectordb import VectorDBClient
-from tcvectordb.model import document, enum
-from tcvectordb.model import index as vdb_index
-from tcvectordb.model.document import Filter
+from tcvectordb import VectorDBClient  # type: ignore
+from tcvectordb.model import document, enum  # type: ignore
+from tcvectordb.model import index as vdb_index  # type: ignore
+from tcvectordb.model.document import Filter  # type: ignore
 
 from configs import dify_config
 from core.rag.datasource.vdb.vector_base import BaseVector
@@ -25,8 +25,8 @@ class TencentConfig(BaseModel):
     database: Optional[str]
     index_type: str = "HNSW"
     metric_type: str = "L2"
-    shard: int = (1,)
-    replicas: int = (2,)
+    shard: int = 1
+    replicas: int = 2
 
     def to_tencent_params(self):
         return {"url": self.url, "username": self.username, "key": self.api_key, "timeout": self.timeout}
@@ -120,14 +120,14 @@ class TencentVector(BaseVector):
         metadatas = [doc.metadata for doc in documents]
         total_count = len(embeddings)
         docs = []
-        for id in range(0, total_count):
+        for i in range(0, total_count):
             if metadatas is None:
                 continue
-            metadata = json.dumps(metadatas[id])
+            metadata = json.dumps(metadatas[i])
             doc = document.Document(
-                id=metadatas[id]["doc_id"],
-                vector=embeddings[id],
-                text=texts[id],
+                id=metadatas[i]["doc_id"],
+                vector=embeddings[i],
+                text=texts[i],
                 metadata=metadata,
             )
             docs.append(doc)

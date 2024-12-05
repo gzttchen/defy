@@ -9,7 +9,7 @@ import uuid
 from typing import Optional, cast
 
 from flask import Flask, current_app
-from flask_login import current_user
+from flask_login import current_user  # type: ignore
 from sqlalchemy.orm.exc import ObjectDeletedError
 
 from configs import dify_config
@@ -62,6 +62,8 @@ class IndexingRunner:
                     .filter(DatasetProcessRule.id == dataset_document.dataset_process_rule_id)
                     .first()
                 )
+                if not processing_rule:
+                    raise ValueError("no process rule found")
                 index_type = dataset_document.doc_form
                 index_processor = IndexProcessorFactory(index_type).init_index_processor()
                 # extract
@@ -120,6 +122,8 @@ class IndexingRunner:
                 .filter(DatasetProcessRule.id == dataset_document.dataset_process_rule_id)
                 .first()
             )
+            if not processing_rule:
+                raise ValueError("no process rule found")
 
             index_type = dataset_document.doc_form
             index_processor = IndexProcessorFactory(index_type).init_index_processor()
@@ -254,7 +258,7 @@ class IndexingRunner:
                     tenant_id=tenant_id,
                     model_type=ModelType.TEXT_EMBEDDING,
                 )
-        preview_texts = []
+        preview_texts: list[str] = []
         total_segments = 0
         index_type = doc_form
         index_processor = IndexProcessorFactory(index_type).init_index_processor()
@@ -285,7 +289,8 @@ class IndexingRunner:
                 for upload_file_id in image_upload_file_ids:
                     image_file = db.session.query(UploadFile).filter(UploadFile.id == upload_file_id).first()
                     try:
-                        storage.delete(image_file.key)
+                        if image_file:
+                            storage.delete(image_file.key)
                     except Exception:
                         logging.exception(
                             "Delete image_files failed while indexing_estimate, \
@@ -379,8 +384,9 @@ class IndexingRunner:
         # replace doc id to document model id
         text_docs = cast(list[Document], text_docs)
         for text_doc in text_docs:
-            text_doc.metadata["document_id"] = dataset_document.id
-            text_doc.metadata["dataset_id"] = dataset_document.dataset_id
+            if text_doc.metadata is not None:
+                text_doc.metadata["document_id"] = dataset_document.id
+                text_doc.metadata["dataset_id"] = dataset_document.dataset_id
 
         return text_docs
 
@@ -529,7 +535,7 @@ class IndexingRunner:
                     document_format_thread = threading.Thread(
                         target=self.format_qa_document,
                         kwargs={
-                            "flask_app": current_app._get_current_object(),
+                            "flask_app": current_app._get_current_object(),  # type: ignore
                             "tenant_id": tenant_id,
                             "document_node": doc,
                             "all_qa_documents": all_qa_documents,
@@ -648,7 +654,7 @@ class IndexingRunner:
         # create keyword index
         create_keyword_thread = threading.Thread(
             target=self._process_keyword_index,
-            args=(current_app._get_current_object(), dataset.id, dataset_document.id, documents),
+            args=(current_app._get_current_object(), dataset.id, dataset_document.id, documents),  # type: ignore
         )
         create_keyword_thread.start()
         if dataset.indexing_technique == "high_quality":
@@ -659,7 +665,7 @@ class IndexingRunner:
                     futures.append(
                         executor.submit(
                             self._process_chunk,
-                            current_app._get_current_object(),
+                            current_app._get_current_object(),  # type: ignore
                             index_processor,
                             chunk_documents,
                             dataset,

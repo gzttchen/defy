@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from core.app.app_config.entities import DatasetRetrieveConfigEntity
 from core.app.entities.app_invoke_entities import InvokeFrom
@@ -23,7 +23,7 @@ class DatasetRetrieverTool(Tool):
     def get_dataset_tools(
         tenant_id: str,
         dataset_ids: list[str],
-        retrieve_config: DatasetRetrieveConfigEntity,
+        retrieve_config: Optional[DatasetRetrieveConfigEntity],
         return_resource: bool,
         invoke_from: InvokeFrom,
         hit_callback: DatasetIndexToolCallbackHandler,
@@ -51,6 +51,8 @@ class DatasetRetrieverTool(Tool):
             invoke_from=invoke_from,
             hit_callback=hit_callback,
         )
+        if retrieval_tools is None:
+            return []
         # restore retrieve strategy
         retrieve_config.retrieve_strategy = original_retriever_mode
 

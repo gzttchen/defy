@@ -5,7 +5,7 @@ import uuid
 from collections.abc import Generator, Mapping
 from concurrent.futures import ThreadPoolExecutor, wait
 from copy import copy, deepcopy
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from flask import Flask, current_app
 
@@ -54,7 +54,7 @@ class GraphEngineThreadPool(ThreadPoolExecutor):
         self.max_submit_count = max_submit_count
         self.submit_count = 0
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(self, fn, /, *args, **kwargs):
         self.submit_count += 1
         self.check_is_full()
 
@@ -128,6 +128,7 @@ class GraphEngine:
     def run(self) -> Generator[GraphEngineEvent, None, None]:
         # trigger graph run start event
         yield GraphRunStartedEvent()
+        stream_processor: Optional[Union[EndStreamProcessor, AnswerStreamProcessor]] = None
 
         try:
             if self.init_params.workflow_type == WorkflowType.CHAT:
@@ -151,7 +152,7 @@ class GraphEngine:
                     elif isinstance(item, NodeRunSucceededEvent):
                         if item.node_type == NodeType.END:
                             self.graph_runtime_state.outputs = (
-                                item.route_node_state.node_run_result.outputs
+                                dict(item.route_node_state.node_run_result.outputs)
                                 if item.route_node_state.node_run_result
                                 and item.route_node_state.node_run_result.outputs
                                 else {}
@@ -321,7 +322,7 @@ class GraphEngine:
 
                 if any(edge.run_condition for edge in edge_mappings):
                     # if nodes has run conditions, get node id which branch to take based on the run condition results
-                    condition_edge_mappings = {}
+                    condition_edge_mappings: dict[str, list[GraphEdge]] = {}
                     for edge in edge_mappings:
                         if edge.run_condition:
                             run_condition_hash = edge.run_condition.hash
@@ -335,7 +336,8 @@ class GraphEngine:
                             continue
 
                         edge = sub_edge_mappings[0]
-
+                        if not edge.run_condition:
+                            continue
                         result = ConditionManager.get_condition_handler(
                             init_params=self.init_params,
                             graph=self.graph,
@@ -357,11 +359,11 @@ class GraphEngine:
                                 parallel_start_node_id=parallel_start_node_id,
                             )
 
-                            for item in parallel_generator:
-                                if isinstance(item, str):
-                                    final_node_id = item
+                            for parallel_result in parallel_generator:
+                                if isinstance(parallel_result, str):
+                                    final_node_id = parallel_result
                                 else:
-                                    yield item
+                                    yield parallel_result
 
                         break
 
@@ -376,11 +378,11 @@ class GraphEngine:
                         parallel_start_node_id=parallel_start_node_id,
                     )
 
-                    for item in parallel_generator:
-                        if isinstance(item, str):
-                            final_node_id = item
+                    for generated_item in parallel_generator:
+                        if isinstance(generated_item, str):
+                            final_node_id = generated_item
                         else:
-                            yield item
+                            yield generated_item
 
                     if not final_node_id:
                         break

@@ -285,8 +285,7 @@ def migrate_knowledge_vector_database():
     while True:
         try:
             datasets = (
-                db.session.query(Dataset)
-                .filter(Dataset.indexing_technique == "high_quality")
+                Dataset.query.filter(Dataset.indexing_technique == "high_quality")
                 .order_by(Dataset.created_at.desc())
                 .paginate(page=page, per_page=50)
             )
@@ -555,7 +554,8 @@ def create_tenant(email: str, language: Optional[str] = None, name: Optional[str
     if language not in languages:
         language = "en-US"
 
-    name = name.strip()
+    if name is not None:
+        name = name.strip()
 
     # generate random password
     new_password = secrets.token_urlsafe(16)
@@ -582,7 +582,7 @@ def upgrade_db():
             click.echo(click.style("Starting database migration.", fg="green"))
 
             # run db migration
-            import flask_migrate
+            import flask_migrate  # type: ignore
 
             flask_migrate.upgrade()
 

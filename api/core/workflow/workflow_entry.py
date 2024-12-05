@@ -129,11 +129,11 @@ class WorkflowEntry:
         :return:
         """
         # fetch node info from workflow graph
-        graph = workflow.graph_dict
-        if not graph:
+        workflow_graph = workflow.graph_dict
+        if not workflow_graph:
             raise ValueError("workflow graph not found")
 
-        nodes = graph.get("nodes")
+        nodes = workflow_graph.get("nodes")
         if not nodes:
             raise ValueError("nodes not found in workflow graph")
 
@@ -195,7 +195,7 @@ class WorkflowEntry:
         return node_instance, generator
 
     @staticmethod
-    def handle_special_values(value: Optional[Mapping[str, Any]]) -> Mapping[str, Any] | None:
+    def handle_special_values(value: Optional[dict[str, Any]]) -> dict[str, Any] | None:
         return WorkflowEntry._handle_special_values(value)
 
     @staticmethod
@@ -208,10 +208,10 @@ class WorkflowEntry:
                 res[k] = WorkflowEntry._handle_special_values(v)
             return res
         if isinstance(value, list):
-            res = []
+            res_list = []
             for item in value:
-                res.append(WorkflowEntry._handle_special_values(item))
-            return res
+                res_list.append(WorkflowEntry._handle_special_values(item))
+            return res_list
         if isinstance(value, File):
             return value.to_dict()
         return value

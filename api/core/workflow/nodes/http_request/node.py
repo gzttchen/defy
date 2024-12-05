@@ -35,7 +35,7 @@ class HttpRequestNode(BaseNode[HttpRequestNodeData]):
     _node_type = NodeType.HTTP_REQUEST
 
     @classmethod
-    def get_default_config(cls, filters: dict | None = None) -> dict:
+    def get_default_config(cls, filters) -> dict:
         return {
             "type": "http-request",
             "config": {
