@@ -17,6 +17,8 @@ import useAppsQueryState from './hooks/useAppsQueryState'
 import type { AppListResponse } from '@/models/app'
 import { fetchAppList } from '@/service/apps'
 import { useAppContext } from '@/context/app-context'
+import { fetchInstalledAppList as doFetchInstalledAppList } from '@/service/explore'
+import type { InstalledApp } from '@/models/explore'
 import { NEED_REFRESH_APP_LIST_KEY } from '@/config'
 import { CheckModal } from '@/hooks/use-pay'
 import TabSliderNew from '@/app/components/base/tab-slider-new'
@@ -57,6 +59,7 @@ const Apps = () => {
   const [activeTab, setActiveTab] = useTabSearchParams({
     defaultTab: 'all',
   })
+  const [installedApps, setInstalledApps] = useState<InstalledApp[]>([])
   const { query: { tagIDs = [], keywords = '' }, setQuery } = useAppsQueryState()
   const [tagFilterValue, setTagFilterValue] = useState<string[]>(tagIDs)
   const [searchKeywords, setSearchKeywords] = useState(keywords)
@@ -80,6 +83,14 @@ const Apps = () => {
     { value: 'agent-chat', text: t('app.types.agent'), icon: <RiRobot3Line className='w-[14px] h-[14px] mr-1' /> },
     { value: 'workflow', text: t('app.types.workflow'), icon: <RiExchange2Line className='w-[14px] h-[14px] mr-1' /> },
   ]
+
+  useEffect(() => {
+    const fetchInstalledAppList = async () => {
+      const { installed_apps }: any = await doFetchInstalledAppList()
+      setInstalledApps(installed_apps)
+    }
+    fetchInstalledAppList()
+  }, [])
 
   useEffect(() => {
     document.title = `${t('common.menus.apps')} -  Dify`
@@ -146,9 +157,10 @@ const Apps = () => {
       <nav className='grid content-start grid-cols-1 gap-4 px-12 pt-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 grow shrink-0'>
         {isCurrentWorkspaceEditor
           && <NewAppCard onSuccess={mutate} />}
-        {data?.map(({ data: apps }) => apps.map(app => (
-          <AppCard key={app.id} app={app} onRefresh={mutate} />
-        )))}
+        {data?.map(({ data: apps }) => apps.map((app) => {
+          const installedApp = installedApps.find(installedApp => installedApp.app.id === app.id)
+          return <AppCard key={app.id} app={app} installedAppId={installedApp?.id} onRefresh={mutate} />
+        }))}
         <CheckModal />
       </nav>
       <div ref={anchorRef} className='h-0'> </div>

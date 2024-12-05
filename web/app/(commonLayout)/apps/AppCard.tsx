@@ -34,10 +34,11 @@ import { fetchWorkflowDraft } from '@/service/workflow'
 
 export type AppCardProps = {
   app: App
+  installedAppId?: string
   onRefresh?: () => void
 }
 
-const AppCard = ({ app, onRefresh }: AppCardProps) => {
+const AppCard = ({ app, installedAppId, onRefresh }: AppCardProps) => {
   const { t } = useTranslation()
   const { notify } = useContext(ToastContext)
   const { isCurrentWorkspaceEditor } = useAppContext()
@@ -203,6 +204,12 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
       e.preventDefault()
       setShowSwitchModal(true)
     }
+    const onClickInstalledApp = async (e: React.MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation()
+      props.onClick?.()
+      e.preventDefault()
+      window.open(`/explore/installed/${installedAppId}`, '_blank')
+    }
     const onClickDelete = async (e: React.MouseEvent<HTMLDivElement>) => {
       e.stopPropagation()
       props.onClick?.()
@@ -229,6 +236,17 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
               onClick={onClickSwitch}
             >
               <span className='text-gray-700 text-sm leading-5'>{t('app.switch')}</span>
+            </div>
+          </>
+        )}
+        {installedAppId && (
+          <>
+            <Divider className="!my-1" />
+            <div
+              className='h-9 py-2 px-3 mx-1 flex items-center hover:bg-gray-50 rounded-lg cursor-pointer'
+              onClick={onClickInstalledApp}
+            >
+              <span className='text-gray-700 text-sm leading-5'>{t('app.openInExplore')}</span>
             </div>
           </>
         )}
