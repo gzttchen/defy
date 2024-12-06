@@ -1,8 +1,9 @@
-import {
+import React, {
   useCallback,
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RiMenuFoldFill, RiMenuUnfoldFill } from '@remixicon/react'
 import { useChatWithHistoryContext } from '../context'
 import List from './list'
 import AppIcon from '@/app/components/base/app-icon'
@@ -30,6 +31,10 @@ const Sidebar = () => {
   } = useChatWithHistoryContext()
   const [showConfirm, setShowConfirm] = useState<ConversationItem | null>(null)
   const [showRename, setShowRename] = useState<ConversationItem | null>(null)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
+  const CollapsedIcon = ({ isCollapsed, onClick }: { isCollapsed: boolean;onClick: React.MouseEventHandler }) =>
+    isCollapsed ? (<RiMenuUnfoldFill className='hover:cursor-pointer' onClick={onClick} size={20}/>) : (<RiMenuFoldFill className='hover:cursor-pointer' onClick={onClick} size={20}/>)
 
   const handleOperate = useCallback((type: string, item: ConversationItem) => {
     if (type === 'pin')
@@ -60,7 +65,9 @@ const Sidebar = () => {
   }, [showRename, handleRenameConversation, handleCancelRename])
 
   return (
-    <div className='shrink-0 h-full flex flex-col w-[240px] border-r border-r-gray-100'>
+    <div className='shrink-0 h-full flex flex-col w-[240px] border-r border-r-gray-100'
+      style={isCollapsed ? { width: '80px' } : {}}
+    >
       {
         !isMobile && (
           <div className='shrink-0 flex p-4'>
@@ -72,8 +79,13 @@ const Sidebar = () => {
               background={appData?.site.icon_background}
               imageUrl={appData?.site.icon_url}
             />
-            <div className='py-1 text-base font-semibold text-gray-800'>
-              {appData?.site.title}
+            {!isCollapsed && (
+              <div className='py-1 text-base font-semibold text-gray-800'>
+                {appData?.site.title}
+              </div>
+            )}
+            <div className="flex items-center justify-end h-full ml-auto">
+              <CollapsedIcon onClick={() => setIsCollapsed(!isCollapsed)} isCollapsed={isCollapsed} />
             </div>
           </div>
         )
@@ -84,8 +96,10 @@ const Sidebar = () => {
           className='justify-start w-full'
           onClick={handleNewConversation}
         >
-          <Edit05 className='mr-2 w-4 h-4' />
-          {t('share.chat.newChat')}
+          <Edit05 className='mr-2 w-4 h-4 flex-shrink-0' />
+          <div className='overflow-hidden text-ellipsis whitespace-nowrap'>
+            {t('share.chat.newChat')}
+          </div>
         </Button>
       </div>
       <div className='grow px-4 py-2 overflow-y-auto'>
@@ -93,6 +107,7 @@ const Sidebar = () => {
           !!pinnedConversationList.length && (
             <div className='mb-4'>
               <List
+                isCollapsed={isCollapsed}
                 isPin
                 title={t('share.chat.pinnedTitle') || ''}
                 list={pinnedConversationList}
@@ -108,6 +123,7 @@ const Sidebar = () => {
             <List
               title={(pinnedConversationList.length && t('share.chat.unpinnedTitle')) || ''}
               list={conversationList}
+              isCollapsed={isCollapsed}
               onChangeConversation={handleChangeConversation}
               onOperate={handleOperate}
               currentConversationId={currentConversationId}
@@ -115,9 +131,11 @@ const Sidebar = () => {
           )
         }
       </div>
-      <div className='px-4 pb-4 text-xs text-gray-400'>
-        © {appData?.site.copyright || appData?.site.title} {(new Date()).getFullYear()}
-      </div>
+      {!isCollapsed && (
+        <div className="px-4 pb-4 text-xs text-gray-400">
+          © {appData?.site.copyright || appData?.site.title} {(new Date()).getFullYear()}
+        </div>
+      )}
       {!!showConfirm && (
         <Confirm
           title={t('share.chat.deleteConversation.title')}

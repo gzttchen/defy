@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useContext } from 'use-context-selector'
 import { useSelectedLayoutSegments } from 'next/navigation'
 import Link from 'next/link'
+import { RiArrowLeftDoubleFill, RiArrowRightDoubleFill } from '@remixicon/react'
 import Toast from '../../base/toast'
 import Item from './app-nav-item'
 import cn from '@/utils/classnames'
@@ -38,6 +39,9 @@ const ChatIcon = () => (
   </svg>
 )
 
+const CollapsedIcon = ({ isCollapsed, onClick }: { isCollapsed: boolean;onClick: React.MouseEventHandler }) =>
+  isCollapsed ? (<RiArrowRightDoubleFill onClick={onClick} size={22}/>) : (<RiArrowLeftDoubleFill onClick={onClick} size={22}/>)
+
 export type IExploreSideBarProps = {
   controlUpdateInstalledApps: number
 }
@@ -50,10 +54,14 @@ const SideBar: FC<IExploreSideBarProps> = ({
   const lastSegment = segments.slice(-1)[0]
   const isDiscoverySelected = lastSegment === 'apps'
   const isChatSelected = lastSegment === 'chat'
-  const { installedApps, setInstalledApps } = useContext(ExploreContext)
+  const {
+    installedApps,
+    setInstalledApps,
+  } = useContext(ExploreContext)
 
   const media = useBreakpoints()
   const isMobile = media === MediaType.mobile
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   const fetchInstalledAppList = async () => {
     const { installed_apps }: any = await doFetchInstalledAppList()
@@ -92,15 +100,17 @@ const SideBar: FC<IExploreSideBarProps> = ({
 
   const pinnedAppsCount = installedApps.filter(({ is_pinned }) => is_pinned).length
   return (
-    <div className='w-fit sm:w-[216px] shrink-0 pt-6 px-4 border-gray-200 cursor-pointer'>
+    <div className='w-fit sm:w-[216px] shrink-0 pt-6 px-4 border-gray-200 cursor-pointer'
+      style={isCollapsed ? { width: '75px' } : {}}
+    >
       <div>
         <Link
           href='/explore/apps'
           className={cn(isDiscoverySelected ? 'text-primary-600  bg-white font-semibold' : 'text-gray-700 font-medium hover:bg-gray-200', 'flex items-center pc:justify-start pc:w-full mobile:justify-center mobile:w-fit h-9 px-3 mobile:px-2 gap-2 rounded-lg')}
           style={isDiscoverySelected ? { boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.05)' } : {}}
         >
-          {isDiscoverySelected ? <SelectedDiscoveryIcon /> : <DiscoveryIcon />}
-          {!isMobile && <div className='text-sm'>{t('explore.sidebar.discovery')}</div>}
+          {isDiscoverySelected ? <SelectedDiscoveryIcon/> : <DiscoveryIcon/>}
+          { !isMobile && !isCollapsed && <div className='text-sm'>{t('explore.sidebar.discovery')}</div>}
         </Link>
       </div>
       {installedApps.length > 0 && (
@@ -108,12 +118,13 @@ const SideBar: FC<IExploreSideBarProps> = ({
           <p className='pl-2 mobile:px-0 text-xs text-gray-500 break-all font-medium uppercase'>{t('explore.sidebar.workspace')}</p>
           <div className='mt-3 space-y-1 overflow-y-auto overflow-x-hidden'
             style={{
-              height: 'calc(100vh - 250px)',
+              height: 'calc(100vh - 225px)',
             }}
           >
             {installedApps.map(({ id, is_pinned, uninstallable, app: { name, icon_type, icon, icon_url, icon_background } }, index) => (
               <React.Fragment key={id}>
                 <Item
+                  isCollapsed={isCollapsed}
                   isMobile={isMobile}
                   name={name}
                   icon_type={icon_type}
@@ -133,6 +144,13 @@ const SideBar: FC<IExploreSideBarProps> = ({
                 {index === pinnedAppsCount - 1 && index !== installedApps.length - 1 && <Divider />}
               </React.Fragment>
             ))}
+          </div>
+        </div>
+      )}
+      { !isMobile && (
+        <div className="h-[25px]">
+          <div className="flex items-center justify-end h-full">
+            <CollapsedIcon onClick={() => setIsCollapsed(!isCollapsed)} isCollapsed={isCollapsed} />
           </div>
         </div>
       )}
